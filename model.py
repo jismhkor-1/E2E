@@ -60,7 +60,6 @@ class Seq2Seq(nn.Module):
         result = torch.stack(output, 1)
         return result
 
-
     def generate(self, mr, lengths):
         # encoder
         x = self.embedding(mr)

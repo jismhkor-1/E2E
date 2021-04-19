@@ -142,16 +142,16 @@ def build_up_for_auxiliary_model(filename, is_train):
     attributes = {'eattype': 0, 'food': 1, 'familyfriendly': 2, 'customer rating': 3, 'area': 4, 'pricerange': 5}
     if is_train:
         att_value = data_analyse(filename, attributes)
-        pickle.dump(att_value, open('e2e-dataset/att_value.pkl', 'wb'))
+        i = 0
+        v2id = dict()
+        for s in attributes.keys():
+            for v in att_value[attributes[s]]:
+                v2id[s + v] = i
+                i += 1
+        pickle.dump(v2id, open('e2e-dataset/v2id.pkl', 'wb'))
     else:
-        att_value = pickle.load(open('e2e-dataset/att_value.pkl', 'rb'))
+        v2id = pickle.load(open('e2e-dataset/v2id.pkl', 'rb'))
 
-    i = 0
-    v2id = dict()
-    for s in attributes.keys():
-        for v in att_value[attributes[s]]:
-            v2id[s+v] = i
-            i += 1
     data = pd.read_csv(filename).values
     labels = []
     for mr in data:

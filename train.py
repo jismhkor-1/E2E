@@ -30,7 +30,7 @@ def train_binary_predictor():
     clf = classifier(vocab_size, embedding_size, value_size)
     optimizer = opt.Adam(clf.parameters(), lr=1e-3)
 
-    num_epoch = 1
+    num_epoch = 20
     for i in range(num_epoch):
         print('epoch {}/{}'.format(i + 1, num_epoch))
         shuffle_indices = np.random.permutation(np.arange(data_size))
@@ -80,4 +80,4 @@ def train_txt_generator():
             print(loss)
 
 
-train_binary_predictor()
+# train_binary_predictor()
