@@ -54,7 +54,7 @@ def preprocess(file_name):
             ref = ref.replace(',', ' ,')
             f1.write(mr_process)
             f1.write('\n')
-            f2.write(ref)
+            f2.write('$SOF$ '+ref)
             f2.write('\n')
             records.append(record)
         f1.close()
@@ -66,10 +66,13 @@ def create_dict(mr_fn, ref_fn):
     word_set = set()
     w2id = dict()
     id2w = dict()
-    word_id = 0
-    w2id['$EOF$'] = word_id
-    id2w[word_id] = '$EOF$'
-    word_id += 1
+    w2id['$EOF$'] = 0
+    id2w[0] = '$EOF$'
+    word_set.add('$EOF$')
+    w2id['$SOF$'] = 1
+    id2w[1] = '$SOF$'
+    word_set.add('$SOF$')
+    word_id = 2
     with open(mr_fn, encoding='utf8') as f:
         mrs = f.readlines()
         for mr in mrs:
@@ -146,7 +149,7 @@ def build_up_for_auxiliary_model(filename, is_train):
         v2id = dict()
         for s in attributes.keys():
             for v in att_value[attributes[s]]:
-                v2id[s + v] = i
+                v2id[s + '-' + v] = i
                 i += 1
         pickle.dump(v2id, open('e2e-dataset/v2id.pkl', 'wb'))
     else:
@@ -164,8 +167,14 @@ def build_up_for_auxiliary_model(filename, is_train):
             if att in {'name', 'near'}:
                 continue
             value = tup[1][:-1]
-            x = v2id.get(att+value, -1)
+            x = v2id.get(att+'-'+value, -1)
             if not x < 0:
                 label[x] = 1
         labels.append(label)
     return np.stack(labels)
+
+
+# preprocess('e2e-dataset/trainset.csv')
+# preprocess('e2e-dataset/devset.csv')
+# preprocess('e2e-dataset/testset.csv')
+# build_up_for_auxiliary_model('e2e-dataset/trainset.csv', False)

@@ -15,6 +15,7 @@ ref, ref_lengths = transform(w2id, 'e2e-dataset/trainset_ref.txt')
 binary_representation = build_up_for_auxiliary_model('e2e-dataset/trainset.csv', False)
 
 embedding_size = 50
+hidden_size = 128
 batch_size = 20
 
 vocab_size = len(w2id)
@@ -27,7 +28,7 @@ iters = data_size // batch_size
 
 
 def train_binary_predictor():
-    clf = classifier(vocab_size, embedding_size, value_size)
+    clf = classifier(vocab_size, embedding_size, hidden_size, value_size)
     optimizer = opt.Adam(clf.parameters(), lr=1e-3)
 
     num_epoch = 20
@@ -48,12 +49,13 @@ def train_binary_predictor():
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+        print(loss)
 
-        torch.save(clf.state_dict(), 'checkpoint/' + str(i + 1) + '-parameter.pkl')
+        torch.save(clf.state_dict(), 'checkpoint/' + str(101+i) + '-parameter.pkl')
 
 
 def train_txt_generator():
-    seq2seq = Seq2Seq(vocab_size, embedding_size)
+    seq2seq = Seq2Seq(vocab_size, hidden_size, embedding_size)
     optimizer = opt.Adam(seq2seq.parameters(), lr=5e-4)
 
     num_epoch = 1
@@ -65,19 +67,27 @@ def train_txt_generator():
         lengths_ = mr_lengths[shuffle_indices]
         ref_ = ref[shuffle_indices]
 
-        for j in range(iters):
+        for j in range(1):
             start = j * batch_size
             end = min(data_size, (j + 1) * batch_size)
             y = seq2seq.forward(torch.LongTensor(mr_[start:end]), torch.LongTensor(ref_[start:end]),
                                 torch.LongTensor(lengths_[start:end]))
             ref_gt = np.array(ref[start:end], dtype=int)
             tgt = torch.tensor(np.eye(vocab_size)[ref_gt])
-            loss = -torch.sum(torch.mul(torch.log(y), tgt))
+            loss = -torch.sum(torch.mul(torch.log(y)[:, :-1, :], tgt[:, 1:, :])) \
+                   - torch.sum(torch.mul(torch.log(1-y)[:, :-1, :], 1-tgt[:, 1:, :]))
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
             print(loss)
 
+            if (j+1) % 200 == 0:
+                torch.save(seq2seq.state_dict(), 'checkpoint/s2s-' + str(j + 1) + '-parameter.pkl')
+                # txt = seq2seq.generate(torch.LongTensor(mr[0]), torch.LongTensor([mr_lengths[0]]), 5)[0].detach().numpy()
+                # for index in txt:
+                #     print(id2w[index], end=' ')
+                # print('\n')
 
-# train_binary_predictor()
+
+train_binary_predictor()
+# train_txt_generator()
